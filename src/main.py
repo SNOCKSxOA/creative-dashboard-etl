@@ -64,9 +64,20 @@ def run_etl():
         dimensions = list(dimensions_by_name.values())
         logger.info(f"{len(dimensions)} einzigartige Creatives geparst ({parse_error_count} mit Warnungen)")
 
+        # Filter: nur CreativeTeam-Ads nach Supabase
+        ALLOWED_SOURCES = {"CreativeTeam"}
+        creative_team_names = {
+            d["ad_name_raw"] for d in dimensions
+            if d.get("creative_source") in ALLOWED_SOURCES
+        }
+        dimensions = [d for d in dimensions if d["ad_name_raw"] in creative_team_names]
+        logger.info(f"{len(dimensions)} CreativeTeam-Creatives nach Filter")
+
         # 3. Metriken aufbereiten – deduplizieren nach (ad_name_raw, channels)
         metrics_by_key = {}
         for row in rows:
+            if row.get("ad_names", "") not in creative_team_names:
+                continue
             key = (row.get("ad_names", ""), row.get("channels", ""))
             metrics_by_key[key] = {
                 "ad_name_raw": row.get("ad_names", ""),

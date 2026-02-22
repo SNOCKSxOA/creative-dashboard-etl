@@ -283,7 +283,7 @@ def _parse_schema_2(result: dict, remaining: list[str]) -> dict:
                 parts_hyphen = val.split("-")
                 if len(parts_hyphen) >= 3:
                     result["pl_eg_sp"] = "-".join(parts_hyphen[:2])
-                    result["color_freitext_pl"] = "-".join(parts_hyphen[2:])
+                    result["color"] = "-".join(parts_hyphen[2:])
                 else:
                     result["pl_eg_sp"] = val
             else:

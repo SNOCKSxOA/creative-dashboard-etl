@@ -64,9 +64,11 @@ def run_etl():
         dimensions = list(dimensions_by_name.values())
         logger.info(f"{len(dimensions)} einzigartige Creatives geparst ({parse_error_count} mit Warnungen)")
 
-        # 3. Metriken aufbereiten (eine Zeile pro ad_name + channel)
-        metrics = [
-            {
+        # 3. Metriken aufbereiten – deduplizieren nach (ad_name_raw, channels)
+        metrics_by_key = {}
+        for row in rows:
+            key = (row.get("ad_names", ""), row.get("channels", ""))
+            metrics_by_key[key] = {
                 "ad_name_raw": row.get("ad_names", ""),
                 "company":     row.get("company", ""),
                 "channels":    row.get("channels", ""),
@@ -76,8 +78,7 @@ def run_etl():
                 "spend":       row.get("spend"),
                 "roas":        row.get("roas"),
             }
-            for row in rows
-        ]
+        metrics = list(metrics_by_key.values())
 
         # 4. Nach Supabase schreiben
         dims_count = upsert_dimensions(dimensions)

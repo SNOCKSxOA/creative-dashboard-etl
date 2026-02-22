@@ -1,0 +1,55 @@
+steps:
+  # 1. Tests laufen lassen
+  - name: 'python:3.11-slim'
+    id: 'test'
+    entrypoint: bash
+    args:
+      - '-c'
+      - |
+        pip install --quiet -r requirements.txt
+        python -m pytest tests/ -v
+
+  # 2. Docker-Image bauen
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'build'
+    waitFor: ['test']
+    args:
+      - 'build'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/creative-dashboard-etl/creative-dashboard-etl:$SHORT_SHA'
+      - '-t'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/creative-dashboard-etl/creative-dashboard-etl:latest'
+      - '.'
+
+  # 3. Image in Artifact Registry pushen
+  - name: 'gcr.io/cloud-builders/docker'
+    id: 'push'
+    waitFor: ['build']
+    args:
+      - 'push'
+      - '--all-tags'
+      - 'europe-west1-docker.pkg.dev/$PROJECT_ID/creative-dashboard-etl/creative-dashboard-etl'
+
+  # 4. Auf Cloud Run deployen
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    id: 'deploy'
+    waitFor: ['push']
+    entrypoint: gcloud
+    args:
+      - 'run'
+      - 'deploy'
+      - 'creative-dashboard-etl'
+      - '--image=europe-west1-docker.pkg.dev/$PROJECT_ID/creative-dashboard-etl/creative-dashboard-etl:$SHORT_SHA'
+      - '--region=europe-west1'
+      - '--platform=managed'
+      - '--no-allow-unauthenticated'
+      - '--memory=1Gi'
+      - '--cpu=1'
+      - '--timeout=540'
+      - '--max-instances=1'
+      - '--service-account=snocks-analytics@appspot.gserviceaccount.com'
+      - '--set-env-vars=SUPABASE_URL=https://tqepyjikoersslqjlbks.supabase.co'
+      - '--set-secrets=SUPABASE_SERVICE_ROLE_KEY=SUPABASE_SERVICE_ROLE_KEY:latest'
+
+options:
+  logging: CLOUD_LOGGING_ONLY

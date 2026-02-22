@@ -126,7 +126,7 @@ class TestSchema2:
 
         assert result["schema_version"] == 2
         assert result["pl_eg_sp"] == "PL-SOC"
-        assert result["color_freitext_pl"] == "Rot"
+        assert result["color"] == "Rot"
         assert result["test_ids"] == "T01"
         assert result["visual_ct"] == "VC1"
         assert result["creator_cluster"] == "CC1"
@@ -137,7 +137,7 @@ class TestSchema2:
         result = parse_ad_name(ad)
 
         assert result["pl_eg_sp"] == "PL-SOC"
-        assert result["color_freitext_pl"] == "DunkelBlau"
+        assert result["color"] == "DunkelBlau"
 
 
 class TestSchema3:
